@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1525044260080.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2501328175",
+    "id" : "81C480EE",
+    "lastKnownWriteTime" : 1525386876,
+    "last_content_update" : 1525386876303,
+    "path" : "E:/Projetos/metodos_numericos/solutions/Lista_01/R/Lista_01.Rmd",
+    "project_path" : "solutions/Lista_01/R/Lista_01.Rmd",
+    "properties" : {
+        "chunk_output_type" : "inline",
+        "cursorPosition" : "404,0",
+        "scrollLine" : "388"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

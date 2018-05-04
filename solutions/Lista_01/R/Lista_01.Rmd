@@ -1,0 +1,404 @@
+---
+title: "Métodos Numéricos 2018<br>Lista 01"
+output:
+  html_document:
+    df_print: paged
+  html_notebook:
+    theme: flatly
+  pdf_document: default
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r include=FALSE}
+library(data.table)
+library(tictoc)
+library(ggplot2)
+library(plotly)
+options(scipen = 10)
+```
+
+<br><br>
+
+Nesta lista, vamos trabalhar com o seguinte processo estocástico AR(1):
+
+$$ z_t = \rho z_{t-1} + \varepsilon_t , $$
+
+com $\varepsilon_t \sim N(\mu,\sigma^2)$. Inicialmente, assumiremos que 
+$\mu=0$, $\rho = 0.95$ e $\sigma = 0.007$, calibração de Cooley & Prescott (1995).
+
+<br>
+
+### Questão 1
+#### Discretize o processo acima usando o método de Tauchen (1986). Use 9 pontos.
+
+<br>
+
+Ao discretizar um processo que assume valores contínuos, é necessário determinar
+o intervalo do grid, o número de pontos, e sua localização. Além disso, é
+necessário determinar probabiliades condicionais de transição entre os 
+estados de forma consistente com o processo original.
+
+Pelo método de Tauchen, o intervalo de um grid de $N$ pontos é determinado por 
+$[\mu - \theta_N, \mu + \theta_N]$, em que $\theta_N = m \frac{\sigma}{\sqrt{1-\rho^2}}$
+é o desvio padrão do processo estocástico, multiplicado por um parâmetro de escala $m$. 
+Os demais $N-2$ pontos são distribuídos uniformemente no intervalo.
+
+```{r}
+# Parâmetros Iniciais
+N     = 9
+rho   = 0.95
+sigma = 0.007
+mu    = 0
+m     = 3
+
+tauchen_grid = function(N, m, sigma, rho) {
+  thetaN = m * sigma / sqrt(1-rho^2)  
+  seq(-thetaN, thetaN, length.out = N)
+}
+
+thetaT = tauchen_grid(N, m, sigma, rho)
+as.matrix(thetaT)
+```
+
+
+Seja $\theta_{i,t}$ um estado no período $t$, e $\theta_{j, t+1}$ um estado no
+período $t+1$. No método de Tauchen, as probabilidades de transição dos pontos
+interiores do grid são dadas por
+
+$$ p_{i,j} = 
+ \Phi \left( \frac{\theta_j + \Delta \theta/2 - (1-\rho) \mu - \rho \theta_i}{\sigma} \right)
+ - \Phi \left(\frac{\theta_j - \Delta \theta/2 - (1-\rho) \mu - \rho \theta_i}{\sigma}\right)$$ 
+
+em que $\Phi$ é a CDF da $N(\mu, \sigma^2)$. Nos cantos do grid, temos que
+
+$$ p_{i,1} = 
+ \Phi \left(\frac{\theta_1 - (1-\rho) \mu - \rho \theta_i + \Delta \theta/2}{\sigma} \right) $$
+
+$$ p_{i,N} = 1 - \Phi \left(\frac{\theta_N - (1-\rho) \mu - \rho \theta_i - \Delta \theta/2}{\sigma} \right).$$ 
+
+```{r echo=TRUE}
+tauchen_P = function(grid, rho, sigma, mu) {
+  N = length(grid)
+  delta = (max(grid) - min(grid)) / (N-1)
+  PT = matrix(NA_real_, N, N)
+  for(i in 1:N) {
+    for(j in 1:N) {
+      if(j == 1) {
+        PT[i,j] = pnorm( (grid[1] - (1-rho)*mu - rho*grid[i] + delta/2) / sigma )
+      } else if(j==N) {
+        PT[i,j] = 1 - pnorm( (grid[N] - (1-rho)*mu - rho*grid[i] - delta/2) / sigma )
+      } else {
+        PT[i,j] = 
+          pnorm((grid[j] + delta/2 - (1-rho)*mu - rho*grid[i]) / sigma) -
+          pnorm((grid[j] - delta/2 - (1-rho)*mu - rho*grid[i]) / sigma)
+      }
+    }
+  }
+  return(PT)
+}
+
+PT = tauchen_P(thetaT, rho, sigma, mu)
+round(PT, 4)
+rowSums(PT) # Linhas da matriz devem somar 1.
+```
+<br>
+
+### Questão 2
+#### Discretize o processo acima usando o método de Rouwenhorst. Use 9 pontos.
+
+<br>
+
+A definição do grid no método de Rouwenhorst é um caso particular do método de 
+Tauchen, com $m = \sqrt{N-1}$. 
+
+```{r}
+thetaR = tauchen_grid(N, m = sqrt(N-1), sigma, rho)
+thetaR
+```
+
+A matriz de transição $P$, porém, é obtida recursivamente. 
+
+```{r}
+rouwen_P = function(N, rho) {
+  p = (1+rho)/2
+  P_init = matrix(c(p, 1-p, 1-p, p), 2, 2, byrow = TRUE)
+
+  for(i in 3:N) {
+    PR = 
+      rbind(cbind(p*P_init, 0), 0) +
+      rbind(cbind(0, (1-p)*P_init), 0) +
+      rbind(0, cbind((1-p)*P_init, 0)) +
+      rbind(0, cbind(0, p*P_init))
+    PR = PR / rowSums(PR) # normalização
+    P_init = PR
+  }
+  
+  return(PR)
+}
+
+PR = rouwen_P(N, rho)
+round(PR, 4)
+```
+<br>
+
+### Questão 03
+#### Simule o processo contínuo para 10000 períodos. Faça o mesmo para os processos discretizados (lembre-se de usar as mesmas realizações para os choques). Compare os caminhos para cada processo (gráficos serão úteis aqui). Se eles não estiverem muito próximos, utilize mais pontos.
+
+<br>
+
+```{r}
+set.seed(96452)
+time_span = 10000
+eps = rnorm(time_span, mu, sigma)
+
+# Processo contínuo
+zc = rep(0, time_span)
+for(t in 2:time_span)
+  zc[t] = rho * zc[t-1] + eps[t]
+
+# Funcão para gerar processos
+gen_process = function(grid, P, eps, mu, sigma) {
+  time_span = length(eps)
+  z = rep(0, time_span)
+  for(t in 2:time_span) {
+    i = which(grid == z[t-1])
+    j = sum(cumsum(P[i, ]) < pnorm(eps[t], mu, sigma)) + 1
+    z[t] = grid[j]
+  }
+  return(z)  
+}
+
+zt = gen_process(thetaT, PT, eps, mu, sigma)
+zr = gen_process(thetaR, PR, eps, mu, sigma)
+```
+
+Os gráficos a seguir exibem o processo contínuo e as discretizações de Tauchen 
+e de Rouwenhorst para 10.000 períodos e para os 500 primeiros períodos:
+
+```{r echo=FALSE}
+tbl = data.frame(t = 1:time_span, zc, zt, zr)
+
+p1 = ggplot(tbl, aes(tbl$t)) +
+  geom_line(aes(y = tbl$zc, col = "Continuous"), size = 0.2) +
+  geom_line(aes(y = tbl$zt,  col = "Tauchen Discretization"), size = 0.5) +
+  geom_hline(yintercept = thetaT, size = 0.1, linetype = 3, alpha = 0.5) +
+  scale_y_continuous(breaks = round(thetaT, 4), limits = c(-.1, .1)) +
+  scale_color_manual(name = "Process", values = c("Continuous"= 1, "Tauchen Discretization"= 4)) +
+  theme_classic() +
+  ylab("z") +
+  xlab("t")
+
+tbl2 = tbl[1:500, ]
+
+p2 = ggplot(tbl2, aes(tbl2$t)) +
+  geom_line(aes(y = tbl2$zc, col = "Continuous"), size = 0.2) +
+  geom_line(aes(y = tbl2$zt,  col = "Tauchen Discretization"), size = 0.5) +
+  geom_hline(yintercept = thetaT, size = 0.1, linetype = 3, alpha = 0.5) +
+  scale_y_continuous(breaks = round(thetaT, 4), limits = c(-.1, .1)) +
+  scale_color_manual(name = "Process", values = c("Continuous"= 1, "Tauchen Discretization"= 4)) +
+  theme_classic() +
+  ylab("z") +
+  xlab("t")
+
+pl1 = ggplotly(p1, tooltip = NULL)
+pl2 = ggplotly(p2, tooltip = NULL)
+
+pl = subplot(pl1, pl2, nrows = 2)
+pl$height = 600
+pl$width = 1.5 * pl$height
+
+pl
+```
+
+```{r echo=FALSE}
+tbl = data.frame(t = 1:time_span, zc, zt, zr)
+
+p1 = ggplot(tbl, aes(tbl$t)) +
+  geom_line(aes(y = tbl$zc, col = "Continuous"), size = 0.2) +
+  geom_line(aes(y = tbl$zr,  col = "Rouwenhorst Discretization"), size = 0.5) +
+  geom_hline(yintercept = thetaT, size = 0.1, linetype = 3, alpha = 0.5) +
+  scale_y_continuous(breaks = round(thetaT, 4), limits = c(-.1, .1)) +
+  scale_color_manual(name = "Process", values = c("Continuous"= 1, "Rouwenhorst Discretization"= "brown3")) +
+  theme_classic() +
+  ylab("z") +
+  xlab("t")
+
+tbl2 = tbl[1:500, ]
+
+p2 = ggplot(tbl2, aes(tbl2$t)) +
+  geom_line(aes(y = tbl2$zc, col = "Continuous"), size = 0.2) +
+  geom_line(aes(y = tbl2$zr,  col = "Rouwenhorst Discretization"), size = 0.5) +
+  geom_hline(yintercept = thetaT, size = 0.1, linetype = 3, alpha = 0.5) +
+  scale_y_continuous(breaks = round(thetaT, 4), limits = c(-.1, .1)) +
+  scale_color_manual(name = "Process", values = c("Continuous"= 1, "Rouwenhorst Discretization"= "brown3")) +
+  theme_classic() +
+  ylab("z") +
+  xlab("t")
+
+pl1 = ggplotly(p1, tooltip = NULL)
+pl2 = ggplotly(p2, tooltip = NULL)
+
+pl = subplot(pl1, pl2, nrows = 2)
+pl$height = 600
+pl$width = 1.5 * pl$height
+
+pl
+```
+
+Visualmente, a discretização de Tauchen funciona melhor com os parâmetros
+dados. A discretização de Tauchen captura melhor a amplitude do processo sem
+perder precisão. Ambos apresentam, contudo um RMSE semelhante em relação ao
+processo contínuo:
+
+```{r results='hold'}
+RMSE = function(x,y) sqrt(mean((x-y)^2))
+cat("RMSE:\n")
+cbind("Tauchen" = RMSE(zc,zt), "Rouwenhorst" = RMSE(zc,zr))
+```
+
+###  Questão 4
+
+#### Estime processos AR(1) com base nos dados simulados, tanto a partir do Tauchen quanto o de Rouwenhorst. Quão próximo eles estão do processo gerador de dados real? Se eles não estiverem muito próximos, utilize mais pontos.
+
+
+
+```{r}
+fit_zt = lm(zt ~ shift(zt) + 0)
+fit_zr = lm(zr ~ shift(zr) + 0)
+
+coefs = c(fit_zt$coefficients,
+          fit_zr$coefficients)
+
+sigmas = c(summary(fit_zt)$sigma,
+           summary(fit_zr)$sigma)
+
+tbl = data.frame(method = c("Tauchen 9 pts", 
+                            "Rouwenhorst 9 pts"), 
+                 rho = coefs, sigma = sigmas)
+tbl
+```
+
+Pelo método de Tauchen com 9 pontos no grid, estimamos $\hat{\sigma} = 0.008$,
+valor relativamente distante do $\sigma$ verdadeiro. Aumentando o número de 
+pontos no grid para 51, obtemos uma estimativa semelhante à obtida para o
+método de Rouwenhorst com 9 pontos.
+
+```{r}
+thetaT = tauchen_grid(N=51, m=3, sigma, rho)
+PT = tauchen_P(thetaT, rho, sigma, mu)
+ztl = gen_process(thetaT, PT, eps, mu, sigma)
+
+fit_ztl = lm(ztl ~ shift(ztl) + 0)
+rbind(tbl, cbind(method = "Tauchen 25 pts", rho = fit_ztl$coefficients, sigma = summary(fit_ztl)$sigma))
+```
+
+
+
+
+###  Questão 5
+
+Vamos refazer os exercícios acima com $\rho = 0.99$.
+
+```{r echo=FALSE}
+rho = 0.99
+N = 9
+
+# Processo contínuo
+zc = rep(0, time_span)
+for(t in 2:time_span)
+  zc[t] = rho * zc[t-1] + eps[t]
+
+# Tauchen
+thetaT = tauchen_grid(N, m, sigma, rho)
+PT = tauchen_P(thetaT, rho, sigma, mu)
+zt = gen_process(thetaT, PT, eps, mu, sigma)
+
+tbl = data.frame(t = 1:time_span, zc, zt)
+
+p1 = ggplot(tbl, aes(tbl$t)) +
+  geom_line(aes(y = tbl$zc, col = "Continuous"), size = 0.2) +
+  geom_line(aes(y = tbl$zt,  col = "Tauchen Discretization"), size = 0.5) +
+  geom_hline(yintercept = thetaT, size = 0.1, linetype = 3, alpha = 0.5) +
+  scale_y_continuous(breaks = round(thetaT, 4), limits = c(-.15, .15)) +
+  scale_color_manual(name = "Process", values = c("Continuous"= 1, "Tauchen Discretization"= 4)) +
+  theme_classic() +
+  ylab("z") +
+  xlab("t")
+
+tbl2 = tbl[1:500, ]
+
+p2 = ggplot(tbl2, aes(tbl2$t)) +
+  geom_line(aes(y = tbl2$zc, col = "Continuous"), size = 0.2) +
+  geom_line(aes(y = tbl2$zt,  col = "Tauchen Discretization"), size = 0.5) +
+  geom_hline(yintercept = thetaT, size = 0.1, linetype = 3, alpha = 0.5) +
+  scale_y_continuous(breaks = round(thetaT, 4), limits = c(-.15, .15)) +
+  scale_color_manual(name = "Process", values = c("Continuous"= 1, "Tauchen Discretization"= 4)) +
+  theme_classic() +
+  ylab("z") +
+  xlab("t")
+
+pl1 = ggplotly(p1, tooltip = NULL)
+pl2 = ggplotly(p2, tooltip = NULL)
+
+pl = subplot(pl1, pl2, nrows = 2)
+pl$height = 600
+pl$width = 1.5 * pl$height
+
+pl
+```
+
+```{r echo=FALSE}
+N = 9
+thetaR = tauchen_grid(N, sqrt(N-1), sigma, rho)
+zr = gen_process(thetaR, rouwen_P(N, rho), eps, mu, sigma)
+
+tbl = data.frame(t = 1:time_span, zc, zr)
+
+p1 = ggplot(tbl, aes(tbl$t)) +
+  geom_line(aes(y = tbl$zc, col = "Continuous"), size = 0.2) +
+  geom_line(aes(y = tbl$zr,  col = "Tauchen Discretization"), size = 0.5) +
+  geom_hline(yintercept = thetaR, size = 0.1, linetype = 3, alpha = 0.5) +
+  scale_y_continuous(breaks = round(thetaR, 4), limits = c(-.15, .15)) +
+  scale_color_manual(name = "Process", values = c("Continuous"= 1, "Tauchen Discretization"= "brown3")) +
+  theme_classic() +
+  ylab("z") +
+  xlab("t")
+
+tbl2 = tbl[1:500, ]
+
+p2 = ggplot(tbl2, aes(tbl2$t)) +
+  geom_line(aes(y = tbl2$zc, col = "Continuous"), size = 0.2) +
+  geom_line(aes(y = tbl2$zr,  col = "Tauchen Discretization"), size = 0.5) +
+  geom_hline(yintercept = thetaR, size = 0.1, linetype = 3, alpha = 0.5) +
+  scale_y_continuous(breaks = round(thetaR, 4), limits = c(-.15, .15)) +
+  scale_color_manual(name = "Process", values = c("Continuous"= 1, "Tauchen Discretization"= "brown3")) +
+  theme_classic() +
+  ylab("z") +
+  xlab("t")
+
+pl1 = ggplotly(p1, tooltip = NULL)
+pl2 = ggplotly(p2, tooltip = NULL)
+
+pl = subplot(pl1, pl2, nrows = 2)
+pl$height = 600
+pl$width = 1.5 * pl$height
+
+pl
+```
+
+
+
+O método de Rouwenhorst funciona melhor para $\rho = 0.99$ com 9 pontos no grid.
+Obtemos os seguintes valores de $\hat{\rho}$ e $\hat{\sigma}$:
+
+
+```{r echo=FALSE}
+fit_zt = lm(zt ~ shift(zt) + 0)
+fit_zr = lm(zr ~ shift(zr) + 0)
+
+data.frame(method = c("Tauchen 9 pts", "Rouwenhorst 9 pts"),
+      "rho" = c(fit_zt$coefficients, fit_zr$coefficients),
+      "sigma" = c(summary(fit_zt)$sigma, summary(fit_zr)$sigma))
+```
+

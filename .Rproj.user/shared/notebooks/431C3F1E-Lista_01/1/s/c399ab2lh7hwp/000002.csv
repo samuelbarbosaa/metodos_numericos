@@ -1,0 +1,33 @@
+"0","```r
+set.seed(96452)
+time_span = 10000
+eps = rnorm(time_span, mu, sigma)
+# Processo contÃ­nuo
+zc = rep(0, time_span)
+for(t in 2:time_span)
+  zc[t] = rho * zc[t-1] + eps[t]
+# MÃ©todo de Tauchen
+tauchen_process = function(grid, P, eps, mu, sigma) {
+  time_span = length(eps)
+  zt = rep(0, time_span)
+  for(t in 2:time_span) {
+    i = which(grid == zt[t-1])
+    j = sum(cumsum(P[i, ]) < pnorm(eps[t], mu, sigma)) + 1
+    zt[t] = grid[j]
+  }
+  return(zt)  
+}
+# MÃ©todo de Rouwenhorst
+rouwen_process = function(grid, P, eps, mu, sigma) {
+  time_span = length(eps)
+  zr = rep(0, time_span)
+  for(t in 2:time_span) {
+    i = which(grid == zr[t-1])
+    j = sum(cumsum(P[i, ]) < pnorm(eps[t], mu, sigma)) + 1
+    zr[t] = grid[j]
+  }
+  return(zr)
+}
+zt = tauchen_process(thetaT, PT, eps, mu, sigma)
+zr = rouwen_process(thetaR, PR, eps, mu, sigma)
+```"
