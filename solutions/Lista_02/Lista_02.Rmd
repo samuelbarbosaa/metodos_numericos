@@ -1,0 +1,45 @@
+---
+title: "Métodos Numéricos 2018 - Lista 02"
+output: html_notebook
+---
+
+Nesta lista vamos solucionar o modelo de *Real Business Cycles* (RBC) usando diferentes
+técnicas de iteração da função valor.
+
+### Preferências
+
+$$ U(c) = \mathbb{E}_0 \sum_{t=0}^{\infty} \beta^t u(c_t) $$
+
+$$ u(c_t) = \frac{c^{1-\mu}-1}{1-\mu}$$
+$$\mu = 1/(1+r)$$
+
+### Tecnologia
+
+$$Y_t = z_t F(K_t, N_t) = z_t K_t^\alpha N_t^{1-\alpha}$$
+
+$$ \log z_t = \rho \log z_{t-1} + \epsilon_t $$
+
+$$ \varepsilon_t \sim N(0, \sigma^2) $$
+
+### Calibração
+
+
+$$\beta = 0.987$$
+$$\mu=2$$
+$$\alpha=0.3$$
+$$\delta=0.012$$
+$$\rho=0.95$$
+$$\sigma=0.007$$
+
+
+
+### Exercício 1
+#### Escreva o problema do planejador na forma recursiva
+
+
+
+
+
+
+
+
