@@ -1,5 +1,0 @@
-"0","thetaT = tauchen_grid(N=51, m=3, sigma, rho)"
-"0","PT = tauchen_P(thetaT, rho, sigma, mu)"
-"0","ztl = gen_process(thetaT, PT, eps, mu, sigma)"
-"0","fit_ztl = lm(ztl ~ shift(ztl) + 0)"
-"0","rbind(tbl, cbind(method = ""Tauchen 25 pts"", rho = fit_ztl$coefficients, sigma = summary(fit_ztl)$sigma))"

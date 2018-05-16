@@ -1,10 +1,10 @@
 ---
 title: "Métodos Numéricos 2018<br>Lista 01"
 output:
-  html_document:
-    df_print: paged
   html_notebook:
     theme: flatly
+  html_document:
+    df_print: paged
   pdf_document: default
 editor_options:
   chunk_output_type: inline
