@@ -43,7 +43,7 @@ while err>tol && it<itmax
     H = U + beta * EV;
     [V, idx] = max(H, [], 1);
     V=squeeze(V); idx=squeeze(idx);
-    err = max(max(abs(V-V0)));
+    err = norm(V-V0);
     if mod(it,20)==0 disp(err); end
     it=it+1;
     V0=V;
@@ -52,11 +52,17 @@ toc()
 
 % Gráficos
 figure()
+subplot(1,2,1)
 plot(k_grid, V)
+title('Função valor')
+xlabel('k')
+ylabel('V(k,z)') 
 
-figure()
+subplot(1,2,2)
 plot(kp_grid, kp_grid(idx))
-
+title('Função política')
+xlabel('k')
+ylabel('G(k,z)') 
 
 %% Monotonicidade
 V0 = repmat(kp_grid', 1, 7);
@@ -82,11 +88,11 @@ while err>tol && it<itmax
     H = U + beta * EV;
     [V, idx] = max(H(idx0:end,:,:), [], 1);
     V=squeeze(V); idx=squeeze(idx);
-    err = max(max(abs(V-V0)));
+    err = norm(V-V0);
     if mod(it,20)==0 disp(err); end
     it=it+1;
     V0=V;
-    if idx0 <= 500 idx0=idx+1; end
+    if idx0 <= 500 idx0=idx; end
 end
 toc()
 
@@ -114,7 +120,7 @@ while check && it<itmax
     H = U + beta * EV;
     [V, idx] = max(H, [], 1);
     V=squeeze(V); idx=squeeze(idx);
-    check = any(any(V>=V0));
+    check = any(any(V<V0));
     it=it+1;
     V0=V;
 end
