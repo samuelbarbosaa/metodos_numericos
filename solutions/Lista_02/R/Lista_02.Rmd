@@ -5,7 +5,7 @@ output:
     df_print: paged
 ---
 
-```{r include=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=TRUE}
 library(data.table)
 library(tictoc)
 ```
