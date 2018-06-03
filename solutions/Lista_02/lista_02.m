@@ -27,14 +27,13 @@ C = Y - S;
 C(C<0) = 0.001;
 U = (C.^(1-mu)-1)/(1-mu);
 
-% Chute inicial para a função valor em cada um dos 7 estados
+%% Força bruta
 V0 = repmat(kp_grid', 1, 7);
 
-%% Força bruta
 it=1;
 err=1;
 tol=10^-5;
-itmax=1000;
+itmax=3000;
 
 tic()
 while err>tol && it<itmax
@@ -64,6 +63,17 @@ title('Função política')
 xlabel('k')
 ylabel('G(k,z)') 
 
+% Euler errors
+
+C0=zeros(500,7);
+
+for z=1:7
+    for i=1:500
+        C0(i,z) = C(idx(i,z),i,z);
+    end
+end
+
+
 %% Monotonicidade
 V0 = repmat(kp_grid', 1, 7);
 
@@ -78,7 +88,7 @@ V0=V;
 it=1;
 err=1;
 tol=10^-5;
-itmax=1000;
+itmax=3000;
 
 % Iterações monótonas
 tic()
@@ -110,17 +120,36 @@ V0 = repmat(kp_grid', 1, 7);
 it=1;
 err=1;
 tol=10^-5;
-itmax=1000;
+itmax=3000;
 check=1;
 
 tic()
-while check && it<itmax
+while err>tol && it<itmax
     EV = V0*P';
     EV = permute(repmat(EV,1,1,500), [1,3,2]);
     H = U + beta * EV;
-    [V, idx] = max(H, [], 1);
-    V=squeeze(V); idx=squeeze(idx);
-    check = any(any(V<V0));
+    
+    idx=zeros(500,7);
+    
+    for z=1:7
+        for j=1:500
+            for i=1:500
+                if i==500 || H(i+1,j,z) < H(i,j,z)             
+                    idx(j,z)=i;
+                    break
+                end
+            end
+        end
+    end
+
+    for z=1:7
+        for i=1:500
+            V(i,z) = H(idx(i,z),i,z);
+        end
+    end
+    
+    err = norm(V-V0);
+    if mod(it,20)==0 disp(err); end
     it=it+1;
     V0=V;
 end
@@ -156,7 +185,7 @@ while err>tol && it<itmax
                 V(i,j)=H(idx(i,j),i,j);
             end
         end
-        err = max(max(abs(V-V0)));
+        err = norm(V-V0);
     end
     if mod(it,50)==0 disp(err); end
     it=it+1;
@@ -203,7 +232,7 @@ while err>tol && it<itmax
     H = U + beta * EV;
     [V, idx] = max(H, [], 1);
     V=squeeze(V); idx=squeeze(idx);
-    err = max(max(abs(V-V0)));
+    err = norm(V-V0);
     if mod(it,20)==0 disp(err); end
     it=it+1;
     V0=V;
@@ -239,7 +268,7 @@ while err>tol && it<itmax
     H = U + beta * EV;
     [V, idx] = max(H, [], 1);
     V=squeeze(V); idx=squeeze(idx);
-    err = max(max(abs(V-V0)));
+    err = norm(V-V0);
     if mod(it,20)==0 disp(err); end
     it=it+1;
     V0=V;
@@ -275,7 +304,7 @@ while err>tol && it<itmax
     H = U + beta * EV;
     [V, idx] = max(H, [], 1);
     V=squeeze(V); idx=squeeze(idx);
-    err = max(max(abs(V-V0)));
+    err = max(max(abs((V-V0))));
     if mod(it,20)==0 disp(err); end
     it=it+1;
     V0=V;
@@ -302,6 +331,9 @@ delta  = 0.012;
 rho    = 0.95;
 sigma  = 0.007;
 
+uprime = @(c) c.^(-mu);
+uprime_inv = @(c) c.^(-1/mu);
+
 % Estado estacionario
 kss = ((1-beta*(1-delta))/(alpha*beta))^(1/(alpha-1))
 
@@ -310,27 +342,36 @@ kss = ((1-beta*(1-delta))/(alpha*beta))^(1/(alpha-1))
 z_grid = exp(z_grid)
 P
 
-k_grid = linspace(0.75*kss, 1.25*kss, 500);
-kp_grid = k_grid;
-[K, KP, Z] = meshgrid(k_grid,kp_grid,z_grid);
+kp_grid = linspace(0.75*kss, 1.25*kss, 500);
+[KP, Z] = meshgrid(kp_grid,z_grid);
 
-% Consumo e utilidade
-Y = Z .* K .^ alpha;
-S = KP - (1-delta).*K;
-C = Y - S;
-C(C<0) = 0.001;
+C0 = KP/max(kp_grid); % Chute inicial crescente e concavo
 
-u = @(c,mu) (c.^(1-mu)-1)/(1-mu);
-U = u(C,mu);
+it=1;
+err=1;
+tol=10^-5;
+itmax=1000;
 
-% Finding optimal k' from k
-G0 = squeeze(repmat(1:500, 1, 1, 7));
-
-for j=1:7
-    for i=1:500
-        KPP=H(idx(i,j),i,j);
-    end
+tic()
+while err>tol && it < itmax
+    E = P*(uprime(C0).*(alpha*Z.*KP.^(alpha-1)+1-delta));
+    M = KP + uprime_inv(beta * E);
+    K = interp1(kp_grid, M); % inverte aproximação linear
+    C = Z.*KP.^(alpha) + (1-delta)*KP - K;
+    it = it+1;
+    err = norm(C-C0);
+    C0=C;
 end
+toc()
 
+EE = log10(abs(1 - (uprime_inv(beta*E))./(C))); % Euler Errors
 
-C.^(-mu) .* alpha .* Z .* KP.^(alpha-1) + 1 - delta
+subplot(1,2,1)
+plot(kp_grid,EE)
+title('Euler Errors')
+xlabel('k')
+
+subplot(1,2,2)
+plot(K,kp_grid)
+title('Função política G(k,z)')
+xlabel('k')
