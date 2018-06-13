@@ -6,6 +6,6 @@ function [C] = C_hat(gamma, K)
     for i = 1:j
         T(:,i) = chebyshev(K,i);
     end
-    C = T * gamma;
+    C = T*gamma;
 end
         
