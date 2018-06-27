@@ -15,14 +15,14 @@ up = @(c) c.^(-gamma);
 %  Markov chain with 9 states. (Use 3 standard deviations for each side)
 
 [zgrid, P] = tauchen(9,3,rho,0,sigma);
-zgrid
+zgrid;
 P
 
 %% b)
 % Discretize the asset space using a grid and solve the individual goat 
 % farmer problem for each state variable.
 
-egrid = exp(zgrid); % endowment grid
+egrid = exp(zgrid) % endowment grid
 
 r = 1/q - 1;
 min_a = - egrid(1) / r;
