@@ -25,20 +25,20 @@ P
 egrid = exp(zgrid) % endowment grid
 
 r = 1/q - 1;
-min_a = - egrid(1) / r;
+min_a = 0;
 max_a = 2 * egrid(9) / r;
 
-agrid = linspace(min_a, max_a, 1000); % asset grid
+agrid = linspace(min_a, max_a, 1000)'; % asset grid
 
-[AP, A, E] = meshgrid(agrid, agrid, egrid);
+[E, A, AP] = meshgrid(egrid, agrid, agrid); % maximizing over 3rd dim
 
 % Consumo e utilidade
 C = E + A - q*AP;
-C(C<=0) = 0.001;
+C(C<0) = 0;
 U = u(C);
 
 % Força bruta
-V0 = repmat(agrid', 1, 9);
+V0 = repmat(agrid, 1, 9);
 
 it=1;
 err=1;
@@ -48,10 +48,9 @@ itmax=3000;
 tic()
 while err>tol && it<itmax
     EV = V0*P';
-    EV = permute(repmat(EV,1,1,1000), [1,3,2]);
+    EV = permute(repmat(EV,1,1,1000), [3,2,1]);
     H = U + beta * EV;
-    [V, idx] = max(H, [], 1);
-    V=squeeze(V); idx=squeeze(idx);
+    [V, idx] = max(H, [], 3);
     err = norm(V-V0);
     it=it+1;
     V0=V;
@@ -61,7 +60,7 @@ toc()
 % Gráficos
 figure()
 subplot(4,2,1)
-plot(agrid, V(1000:-1:1,:))
+plot(agrid, V)
 title('Função valor')
 xlabel('a')
 ylabel('V(a,z)') 
@@ -69,7 +68,7 @@ ylabel('V(a,z)')
 subplot(4,2,2)
 plot(agrid, agrid(idx))
 hold on
-plot([-24,54], [-24,54], 'k--')
+plot([0 60], [0 60], '--k')
 hold off
 title('Função política')
 xlabel('a')
@@ -79,32 +78,34 @@ ylabel('G(a,z)')
 % Find the stationary distribution Pi(z, a) and use it to compute the 
 % aggregate savings in the economy.
 
-id0 = repmat(1/9, 1, 9);
-err = 1;
-while err > 10^-5
-    id = id0 * P;
-    err = norm(id-id0);
-    id0 = id;
+disp('c) -------------------------------------------------------------');
+
+Pi0 = repmat(1/9000, 1000, 9);
+
+I = zeros(1000, 9, 1000);
+for i = 1:1000
+    I(:,:, i) = (agrid(idx) == agrid(i));
 end
 
-
-Pi0 = repmat(1/(1000*9), 1000, 9);
-
+Pi = zeros(1000,9);
 err = 1;
 while err > 10^-5
-    Pi  = Pi0 * P;
-    err = norm(Pi0 - Pi);
+    for i = 1:1000
+        Pi(i,:) = sum((Pi0 .* I(:,:,i))*P);
+    end
+    err = norm(Pi-Pi0);
     Pi0 = Pi;
 end
 
 S = sum(sum(Pi .* agrid(idx)));
-fprintf('c) Aggregate savings: %2.2f\n', S);
+
+fprintf('Aggregate savings: %2.2f\n', S);
 
 
 %% d)
 % Suppose rho = .97. Redo the analysis. How does the savings rate 
 % compare now? Explain.
-
+disp('d) -------------------------------------------------------------');
 % Ambiente
 clear
 
@@ -116,23 +117,27 @@ sigma = 0.01;
 
 u = @(c) (c.^(1-gamma)-1)/(1-gamma);
 up = @(c) c.^(-gamma);
-[zgrid, P] = tauchen(9,3,rho,0,sigma);
 
-egrid = exp(zgrid); % endowment grid
+[zgrid, P] = tauchen(9,3,rho,0,sigma);
+P
+
+egrid = exp(zgrid) % endowment grid
 
 r = 1/q - 1;
-min_a = - egrid(1) / r;
+min_a = 0;
 max_a = 2 * egrid(9) / r;
 
-agrid = linspace(min_a, max_a, 1000); % asset grid
+agrid = linspace(min_a, max_a, 1000)'; % asset grid
 
-[AP, A, E] = meshgrid(agrid, agrid, egrid);
+[E, A, AP] = meshgrid(egrid, agrid, agrid); % maximizing over 3rd dim
 
+% Consumo e utilidade
 C = E + A - q*AP;
-C(C<=0) = 0.001;
+C(C<0) = 0;
 U = u(C);
 
-V0 = repmat(agrid', 1, 9);
+% Força bruta
+V0 = repmat(agrid, 1, 9);
 
 it=1;
 err=1;
@@ -142,76 +147,90 @@ itmax=3000;
 tic()
 while err>tol && it<itmax
     EV = V0*P';
-    EV = permute(repmat(EV,1,1,1000), [1,3,2]);
+    EV = permute(repmat(EV,1,1,1000), [3,2,1]);
     H = U + beta * EV;
-    [V, idx] = max(H, [], 1);
-    V=squeeze(V); idx=squeeze(idx);
+    [V, idx] = max(H, [], 3);
     err = norm(V-V0);
     it=it+1;
     V0=V;
 end
 toc()
 
+Pi0 = repmat(1/9000, 1000, 9);
+
+I = zeros(1000, 9, 1000);
+for i = 1:1000
+    I(:,:, i) = (agrid(idx) == agrid(i));
+end
+
+Pi = zeros(1000,9);
+err = 1;
+while err > 10^-5
+    for i = 1:1000
+        Pi(i,:) = sum((Pi0 .* I(:,:,i))*P);
+    end
+    err = norm(Pi-Pi0);
+    Pi0 = Pi;
+end
+
+S = sum(sum(Pi .* agrid(idx)));
+
+fprintf('Aggregate savings: %2.2f\n', S);
+
+% Gráficos
 subplot(4,2,3)
-plot(agrid, V(1000:-1:1,:))
+plot(agrid, V)
+title('Função valor')
 xlabel('a')
 ylabel('V(a,z)') 
 
 subplot(4,2,4)
 plot(agrid, agrid(idx))
 hold on
-plot([-22, 55], [-22,55], 'k--')
+plot([0 60], [0 60], '--k')
 hold off
+title('Função política')
 xlabel('a')
 ylabel('G(a,z)') 
-
-Pi0 = repmat(1/(1000*9), 1000, 9);
-
-err = 1;
-while err > 10^-5
-    Pi  = Pi0 * P;
-    err = norm(Pi0 - Pi);
-    Pi0 = Pi;
-end
-
-S = sum(sum(Pi .* agrid(idx)));
-fprintf('d) Aggregate savings: %2.2f\n', S);
-
 
 
 %% e)
 % Suppose gamma = 5. Redo the analysis. How does the savings rate compare now? 
 % Explain.
 
-
+disp('e) -------------------------------------------------------------');
 % Ambiente
 clear
 
 beta = 0.96;
 q = 0.96;
 gamma = 5;
-rho = 0.97;
+rho = 0.9;
 sigma = 0.01;
 
 u = @(c) (c.^(1-gamma)-1)/(1-gamma);
 up = @(c) c.^(-gamma);
-[zgrid, P] = tauchen(9,3,rho,0,sigma);
 
-egrid = exp(zgrid); % endowment grid
+[zgrid, P] = tauchen(9,3,rho,0,sigma);
+P
+
+egrid = exp(zgrid) % endowment grid
 
 r = 1/q - 1;
-min_a = - egrid(1) / r;
+min_a = 0;
 max_a = 2 * egrid(9) / r;
 
-agrid = linspace(min_a, max_a, 1000); % asset grid
+agrid = linspace(min_a, max_a, 1000)'; % asset grid
 
-[AP, A, E] = meshgrid(agrid, agrid, egrid);
+[E, A, AP] = meshgrid(egrid, agrid, agrid); % maximizing over 3rd dim
 
+% Consumo e utilidade
 C = E + A - q*AP;
-C(C<=0) = 0.001;
+C(C<0) = 0;
 U = u(C);
 
-V0 = repmat(agrid', 1, 9);
+% Força bruta
+V0 = repmat(agrid, 1, 9);
 
 it=1;
 err=1;
@@ -221,75 +240,90 @@ itmax=3000;
 tic()
 while err>tol && it<itmax
     EV = V0*P';
-    EV = permute(repmat(EV,1,1,1000), [1,3,2]);
+    EV = permute(repmat(EV,1,1,1000), [3,2,1]);
     H = U + beta * EV;
-    [V, idx] = max(H, [], 1);
-    V=squeeze(V); idx=squeeze(idx);
+    [V, idx] = max(H, [], 3);
     err = norm(V-V0);
     it=it+1;
     V0=V;
 end
 toc()
 
+Pi0 = repmat(1/9000, 1000, 9);
+
+I = zeros(1000, 9, 1000);
+for i = 1:1000
+    I(:,:, i) = (agrid(idx) == agrid(i));
+end
+
+Pi = zeros(1000,9);
+err = 1;
+while err > 10^-5
+    for i = 1:1000
+        Pi(i,:) = sum((Pi0 .* I(:,:,i))*P);
+    end
+    err = norm(Pi-Pi0);
+    Pi0 = Pi;
+end
+
+S = sum(sum(Pi .* agrid(idx)));
+
+fprintf('Aggregate savings: %2.2f\n', S);
+
+% Gráficos
 subplot(4,2,5)
-plot(agrid, V(1000:-1:1,:))
+plot(agrid, V)
+title('Função valor')
 xlabel('a')
 ylabel('V(a,z)') 
 
 subplot(4,2,6)
 plot(agrid, agrid(idx))
 hold on
-plot([-22,55], [-22,55], 'k--')
+plot([0 60], [0 60], '--k')
 hold off
+title('Função política')
 xlabel('a')
 ylabel('G(a,z)') 
-
-Pi0 = repmat(1/(1000*9), 1000, 9);
-
-err = 1;
-while err > 10^-5
-    Pi  = Pi0 * P;
-    err = norm(Pi0 - Pi);
-    Pi0 = Pi;
-end
-
-S = sum(sum(Pi .* agrid(idx)));
-fprintf('e) Aggregate savings: %2.2f\n', S);
 
 
 
 %% f)
 % Suppose sigma = .05. Redo the analysis. How does the savings rate compare 
 % now? Explain.
-
+disp('f) -------------------------------------------------------------');
 % Ambiente
 clear
 
 beta = 0.96;
 q = 0.96;
-gamma = 5;
-rho = 0.97;
+gamma = 1.0001;
+rho = 0.9;
 sigma = 0.05;
 
 u = @(c) (c.^(1-gamma)-1)/(1-gamma);
 up = @(c) c.^(-gamma);
-[zgrid, P] = tauchen(9,3,rho,0,sigma);
 
-egrid = exp(zgrid); % endowment grid
+[zgrid, P] = tauchen(9,3,rho,0,sigma);
+P
+
+egrid = exp(zgrid) % endowment grid
 
 r = 1/q - 1;
-min_a = - egrid(1) / r;
+min_a = 0;
 max_a = 2 * egrid(9) / r;
 
-agrid = linspace(min_a, max_a, 1000); % asset grid
+agrid = linspace(min_a, max_a, 1000)'; % asset grid
 
-[AP, A, E] = meshgrid(agrid, agrid, egrid);
+[E, A, AP] = meshgrid(egrid, agrid, agrid); % maximizing over 3rd dim
 
+% Consumo e utilidade
 C = E + A - q*AP;
-C(C<=0) = 0.001;
+C(C<0) = 0;
 U = u(C);
 
-V0 = repmat(agrid', 1, 9);
+% Força bruta
+V0 = repmat(agrid, 1, 9);
 
 it=1;
 err=1;
@@ -299,37 +333,48 @@ itmax=3000;
 tic()
 while err>tol && it<itmax
     EV = V0*P';
-    EV = permute(repmat(EV,1,1,1000), [1,3,2]);
+    EV = permute(repmat(EV,1,1,1000), [3,2,1]);
     H = U + beta * EV;
-    [V, idx] = max(H, [], 1);
-    V=squeeze(V); idx=squeeze(idx);
+    [V, idx] = max(H, [], 3);
     err = norm(V-V0);
     it=it+1;
     V0=V;
 end
 toc()
 
+Pi0 = repmat(1/9000, 1000, 9);
+
+I = zeros(1000, 9, 1000);
+for i = 1:1000
+    I(:,:, i) = (agrid(idx) == agrid(i));
+end
+
+Pi = zeros(1000,9);
+err = 1;
+while err > 10^-5
+    for i = 1:1000
+        Pi(i,:) = sum((Pi0 .* I(:,:,i))*P);
+    end
+    err = norm(Pi-Pi0);
+    Pi0 = Pi;
+end
+
+S = sum(sum(Pi .* agrid(idx)));
+
+fprintf('Aggregate savings: %2.2f\n', S);
+
+% Gráficos
 subplot(4,2,7)
-plot(agrid, V(1000:-1:1,:))
+plot(agrid, V)
+title('Função valor')
 xlabel('a')
 ylabel('V(a,z)') 
 
 subplot(4,2,8)
 plot(agrid, agrid(idx))
 hold on
-plot([-13, 89], [-13,89], 'k--')
+plot([0 60], [0 60], '--k')
 hold off
+title('Função política')
 xlabel('a')
 ylabel('G(a,z)') 
-
-Pi0 = repmat(1/(1000*9), 1000, 9);
-
-err = 1;
-while err > 10^-5
-    Pi  = Pi0 * P;
-    err = norm(Pi0 - Pi);
-    Pi0 = Pi;
-end
-
-S = sum(sum(Pi .* agrid(idx)));
-fprintf('f) Aggregate savings: %2.2f\n', S);

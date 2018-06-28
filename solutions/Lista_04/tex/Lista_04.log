@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9 64-bit) (preloaded format=pdflatex 2017.1.3)  27 JUN 2018 20:30
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9 64-bit) (preloaded format=pdflatex 2017.1.3)  28 JUN 2018 17:06
 entering extended mode
 **./Lista_04.tex
 (Lista_04.tex
@@ -640,6 +640,10 @@ LaTeX Font Info:    Try loading font information for U+msb on input line 39.
 ("E:\Program Files\MiKTeX 2.9\tex\latex\amsfonts\umsb.fd"
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
+Overfull \hbox (1.72931pt too wide) in paragraph at lines 70--73
+[][] 
+ []
+
 ! Missing $ inserted.
 <inserted text> 
                 $
@@ -655,40 +659,49 @@ l.84 \end{bmatrix}
 [1
 
 {C:/Users/Samue/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}]
-<graf1.png, id=14, 898.85812pt x 261.97874pt>
+<graf1.png, id=15, 816.04875pt x 316.18124pt>
 File: graf1.png Graphic file (type png)
  <use graf1.png>
 Package pdftex.def Info: graf1.png used on input line 98.
-(pdftex.def)             Requested size: 345.0pt x 100.55232pt.
+(pdftex.def)             Requested size: 379.5021pt x 147.04205pt.
 
-Overfull \hbox (5.03629pt too wide) in paragraph at lines 109--114
-[][]
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 109--114
-
+Overfull \hbox (34.5021pt too wide) in paragraph at lines 98--99
+ [][] 
  []
 
 [2 <./graf1.png (PNG copy)>]
+Overfull \hbox (1.72931pt too wide) in paragraph at lines 117--120
+[][] 
+ []
+
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.133 P = \begin{bmatrix}
+l.121 P = \begin{bmatrix}
                          
 ? 
 ! Missing $ inserted.
 <inserted text> 
                 $
-l.143 \end{bmatrix}
+l.131 \end{bmatrix}
                    
 ? 
-<graf2.png, id=21, 883.04906pt x 633.86812pt>
-File: graf2.png Graphic file (type png)
- <use graf2.png>
-Package pdftex.def Info: graf2.png used on input line 183.
-(pdftex.def)             Requested size: 448.50105pt x 321.94339pt.
- [3] [4 <./graf2.png>] (Lista_04.aux) ) 
+
+Overfull \hbox (1.72931pt too wide) in paragraph at lines 154--158
+[][]
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 154--158
+
+ []
+
+<graf5.png, id=21, 651.18282pt x 631.60968pt>
+File: graf5.png Graphic file (type png)
+ <use graf5.png>
+Package pdftex.def Info: graf5.png used on input line 165.
+(pdftex.def)             Requested size: 448.50105pt x 435.0305pt.
+ [3] [4 <./graf5.png>] (Lista_04.aux) ) 
 Here is how much of TeX's memory you used:
  5946 strings out of 493335
  83860 string characters out of 3139261
@@ -709,7 +722,7 @@ s/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr12.pfb><E:/Program Files/MiKTeX
 /type1/public/amsfonts/cm/cmr7.pfb><E:/Program Files/MiKTeX 2.9/fonts/type1/pub
 lic/amsfonts/cm/cmsy10.pfb><E:/Program Files/MiKTeX 2.9/fonts/type1/public/amsf
 onts/cm/cmsy7.pfb>
-Output written on Lista_04.pdf (4 pages, 213060 bytes).
+Output written on Lista_04.pdf (4 pages, 203312 bytes).
 PDF statistics:
  67 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)

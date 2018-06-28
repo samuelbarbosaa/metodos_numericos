@@ -68,7 +68,7 @@ for each side, we have the following grid for $e^z$ and transition matrix
 
 \begin{scriptsize}
 \begin{tabular}{lllllllll}
-   0.9335 &   0.9497  &  0.9662  &  0.9829  &  1.0000   & 1.0174 &   1.0350 &   1.0530  &  1.0712
+   $e^z$ = [0.9335 &   0.9497  &  0.9662  &  0.9829  &  1.0000   & 1.0174 &   1.0350 &   1.0530  &  1.0712]
 \end{tabular}
 
 P = \begin{bmatrix}
@@ -90,44 +90,32 @@ Now we discretize the asset space using a grid starting from the natural debt li
 the worst endowment state up to two times the savings under the best state. 
 This gives us a grid in $[-23.3373, 53.5624]$, with 1.000 points.
 
-Solving the individual goat farmer problem for each state variable, using vectorized
-brute force on Matlab, we get the following value and policy functions:
+Solving the individual goat farmer problem for each state variable, using value
+function iteration on Matlab, we get the following value and policy functions:
 
 \begin{figure}[H]
   \centering
-    \includegraphics[width=\textwidth]{graf1.png}
+    \includegraphics[width=1.1\textwidth]{graf1.png}
 \end{figure}
 
 \section*{1.c)}
 
 Next we find the stationary distribution $\pi(z, a)$ and use it to compute the aggregate savings in the
-economy.
+economy. We then compute the aggregate savings from
 
-Stationary distribution over $z$ is given by:
+	$$ A = \sum_a \sum_z \pi(a,z) a^\prime(a,z) \,\, , $$
 
-\begin{scriptsize}
-\begin{tabular}{l|rrrrrrrrr}
-   $e^z$  & 0.9335 &   0.9497  &  0.9662  &  0.9829  &  1.0000   & 1.0174 &   1.0350 &   1.0530  &  1.0712 \\ \hline
-   $\pi(z)$ & 0.0073 &  0.0352 &  0.1089 &  0.2143 & 0.2685  &  0.2143  &  0.1089 &   0.0352 & 0.0073 \\
-\end{tabular}
-\end{scriptsize}
-
-We then compute the aggregate savings from
-
-	$$ A = \sum_a \sum_z \pi(a,z) a^\prime(a,z) $$
-
-which gives us an aggregate savings of 21.46.
+which gives us an aggregate savings of 26.49.
 
 \section*{1.d)}
 
-Now we redo the analysis using $\rho = 0.97$. Our economy now presents more
-variance of endowments over states (more variance in the grid of $e^z$) and it
-also exhibits more persistence in states, as exhibited by the transition
-matrix.
+Now we redo the analysis using $\rho = 0.97$. Farmers now are exposed to more
+variance over endowments, and longer streaks of the same type of endowment
+states:
 
 \begin{scriptsize}
 \begin{tabular}{lllllllll}
-   0.8839  &  0.9116 &   0.9402&    0.9696 &   1.0000 &   1.0313 &   1.0636 &   1.0970  &  1.1313
+   $e^z$ = [0.8839  &  0.9116 &   0.9402&    0.9696 &   1.0000 &   1.0313 &   1.0636 &   1.0970  &  1.1313]
 \end{tabular}
 
 P = \begin{bmatrix}
@@ -143,43 +131,40 @@ P = \begin{bmatrix}
 \end{bmatrix}
 \end{scriptsize}
 
-Farmers now are exposed to more variance over endowments, and longer streaks
-of the same type of endowment states. Thus, being in low endowment states
-are now worse than before, and, on the other side, being on high states are
-better. This gives us value functions that are more spread over states.
+Thus, being in low endowment states are now worse than before, and, on the
+other side, being on high states are better. This gives us value functions
+that are more spread over states.
 
-We now have an aggregate savings of 23.66.
+To avoid high disutility from low asset states, agents now save a little bit
+more on every state (policy function slightly shifted to the right), resulting
+in an aggregate savings of 27.15.
 
 \section*{1.e)}
 
-If we suppose further that $\gamma = 5$, agents are now more risk averse than
-before. They want more smooth consumption than before. As a result, they save
-less under  low endowment sates and save more under high ones. Value functions
-are thus more concave.
-
-Aggregate savings actually drops to 19.78, because reduced savings under low
-endowment states overwhelms increased savings under high states.
+If we suppose $\gamma = 5$, agents are now much more risk averse than
+before. This means farmers want a more smooth consumption path than before,
+so savings go up a lot under better states. Value functions are more concave, and 
+aggregate savings is 48.67.
 
 \section*{1.f)}
 
-If we suppose $\sigma=0.05$, variance over endowment states get way larger.
+If we suppose $\sigma=0.05$, variance over endowment states gets even larger
+than we saw on (d):
 
 \begin{scriptsize}
 \begin{tabular}{lllllllll}
-   0.5396  &  0.6295  &  0.7345  &  0.8571   & 1.0000 &   1.1668   & 1.3614   & 1.5885  &  1.8534
+   $e^z$ = [0.7088  &  0.7725  &  0.8419  &  0.9176 &  1.0000  &  1.0898  &  1.1878 &   1.2945  &  1.4108]
 \end{tabular}
 \end{scriptsize}
 
-% \begin{figure}[H]
-% 	\vspace*{-2cm}
-%   	\centering
-%     \includegraphics[width=1.3\linewidth]{graf2.png}
-% \end{figure}
+Transitions over states does not change relatively to (c), so
+besides higher variance over endowment, there is more uncertainty going on.
+Thus, as expected, aggregate savings (34.11) is higher than we found on (c) and on (d).
 
 \begin{figure}[p]
     \vspace*{-2cm}
     \makebox[\linewidth]{
-        \includegraphics[width=1.3\linewidth]{graf2.png}
+        \includegraphics[width=1.3\linewidth]{graf5.png}
     }
 \end{figure}
 
